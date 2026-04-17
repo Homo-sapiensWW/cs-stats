@@ -6,10 +6,11 @@ import os
 
 def open_file(filename):
     if not os.path.exists(filename):
-        initial_data = { 'overall':
-                             {'total_kills': 0, 'total_deaths': 0, 'win_rate': 0, 'kd': 0, 'total_matches': 0, 'total_wins': 0},
-                         'history': {'last_matches': '', 'last_match_kd': 0, 'last_matches_kd': ''},
-                         'current_win_streak': 0 }
+        initial_data = {'overall': {'total_kills': 0, 'total_deaths': 0, 'win_rate': 0, 'kd': 0, 'total_matches': 0,
+                                    'total_wins': 0},
+                        'history': {'last_matches': '', 'last_match_kd': 0, 'last_matches_kd': ''},
+                        'records': {'current_win_streak': 0, 'max_win_streak': 0, 'max_kills_for_match': 0}
+                        }
         with open(filename, 'w') as f:
             json.dump(initial_data, f)
         return initial_data
@@ -65,6 +66,16 @@ def find_win_streak(l):
     return current_streak
 
 
+def find_current_win_streak(l):
+    streak = 0
+    for result in reversed(l):
+        if result == 'W':
+            streak += 1
+        else:
+            break
+    return streak
+
+
 def get_results():
     last_matches_results = input('Результаты ласт матчей: ').split()
     return last_matches_results
@@ -77,10 +88,13 @@ def main():
     kill, death = stats
     overall = data['overall']
     history = data['history']
+    records = data['records']
     overall['total_kills'] += kill
     overall['total_deaths'] += death
     rate = calculate_kd(overall['total_kills'], overall['total_deaths'])
     last_match_kd = calculate_kd(kill, death)
+    if kill > records['max_kills_for_match']:
+        records['max_kills_for_match'] = kill
     overall['kd'] = rate
     history['last_match_kd'] = last_match_kd
     if not history['last_matches_kd']:
@@ -94,9 +108,11 @@ def main():
     overall['win_rate'] = calculate_win_rate(overall['total_matches'], overall['total_wins'])
     history['last_matches'] += ' ' + ' '.join(results)
     full_history = str(history['last_matches']).split()
-    data["current_win_streak"] = find_win_streak(full_history)
+    records['current_win_streak'] = find_current_win_streak(full_history)
+    records["max_win_streak"] = find_win_streak(full_history)
     save_file('stats.json', data)
     print('даннве сохраненф')
+
 
 if __name__ == '__main__':
     while True:
